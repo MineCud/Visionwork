@@ -1,0 +1,12 @@
+# 核心推理依赖
+numpy>=1.24,<3
+opencv-python>=4.8
+onnxruntime>=1.16          # CPU 版即可；GPU 装 onnxruntime-gpu
+ultralytics>=8.0           # YOLOv8 人脸检测
+torch>=2.0                 # ultralytics 后端
+
+# 特征检索（可选，未安装时自动退化为 NumPy 矩阵检索）
+faiss-cpu>=1.7 ; platform_system != "Darwin"
+
+# 表格 / 展示
+pandas>=2.0

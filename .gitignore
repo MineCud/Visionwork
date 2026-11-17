@@ -1,0 +1,33 @@
+# ---------------------------------------------------------------- 数据与模型（体积大 / 含人脸）
+data/sample/
+data/snapshots/
+data/gallery/
+data/logs/
+models/
+outputs/
+
+# 权重
+*.pt
+*.onnx
+
+# 运行时产物
+*.npy
+*.mp4
+*.avi
+*.csv
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+build/
+dist/
+*.egg-info/
+
+# Notebook / 编辑器 / 系统
+.ipynb_checkpoints/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
