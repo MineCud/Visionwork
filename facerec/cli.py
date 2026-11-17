@@ -19,6 +19,7 @@ import cv2
 
 from . import config
 from .attendance import AttendanceEvent
+from .imageio import imread, imwrite
 from .pipeline import FacePipeline
 
 IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
@@ -34,7 +35,7 @@ def _print_events(events: List[AttendanceEvent]) -> None:
 def run_image(pipe: FacePipeline, path: Path, out: Path) -> None:
     result = pipe.process_image(path)
     out.parent.mkdir(parents=True, exist_ok=True)
-    cv2.imwrite(str(out), result["vis_frame"])
+    imwrite(out, result["vis_frame"])
     print(f"[图片] {path.name} 人脸数={result['face_count']} 耗时={result['latency_ms']:.1f}ms -> {out}")
     _print_events(result["events"])
 
@@ -49,7 +50,7 @@ def run_directory(pipe: FacePipeline, folder: Path, out_dir: Path) -> None:
     t0 = time.perf_counter()
     for path in images:
         result = pipe.process_image(path)
-        cv2.imwrite(str(out_dir / f"{path.stem}_annotated.jpg"), result["vis_frame"])
+        imwrite(out_dir / f"{path.stem}_annotated.jpg", result["vis_frame"])
         all_events.extend(result["events"])
     elapsed = time.perf_counter() - t0
     print(f"[目录] 处理 {len(images)} 张，总耗时 {elapsed:.2f}s，"

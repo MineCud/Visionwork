@@ -58,6 +58,7 @@ face_mvp/
 │   ├── gallery.py           # 特征库（*.npy + index.csv），FAISS/NumPy 双后端
 │   ├── attendance.py        # 签到时段、冷却去重、CSV 落盘
 │   ├── pipeline.py          # 端到端流水线（检测→识别→考勤→标注）
+│   ├── imageio.py          # 中文路径安全的图像读写（Windows 必备）
 │   ├── cli.py / __main__.py # python -m facerec
 ├── scripts/
 │   ├── enroll.py            # 人脸注册（图片目录 / 摄像头）
@@ -65,7 +66,7 @@ face_mvp/
 ├── examples/                # 最小可运行示例
 ├── tests/test_smoke.py      # 冒烟测试（无需 pytest）
 ├── docs/                    # 架构说明与效果图
-├── data/                    # gallery / sample / snapshots / logs（不入库）
+├── data/                    # gallery / testset / snapshots / logs（不入库）
 └── models/                  # 权重（不入库）
 ```
 
@@ -90,18 +91,18 @@ python scripts/download_models.py --check  # 只检查是否就绪
 
 ```bash
 # 从图片目录注册（多帧取平均）
-python scripts/enroll.py --student_id 202210040130 --name Huang --class_name CS2401 \
-    --images data/sample/202210040130
+python scripts/enroll.py --student_id P1 --name Huang --class_name CS2401 \
+    --images data/testset
 
 # 从摄像头注册
-python scripts/enroll.py --student_id 202210040130 --name Huang --camera --frames 10
+python scripts/enroll.py --student_id P1 --name Huang --camera --frames 10
 ```
 
 ### 4. 跑起来
 
 ```bash
-python -m facerec --source data/sample/202210040130_20260523_085929.jpg
-python -m facerec --source data/sample --out outputs/batch      # 批量图片
+python -m facerec --source data/testset/P2_02.jpg
+python -m facerec --source data/testset --out outputs/batch  # 批量图片
 python -m facerec --source 0                                    # 摄像头实时
 python -m facerec --source demo.mp4 --out outputs/demo.mp4      # 视频
 ```
@@ -112,7 +113,7 @@ python -m facerec --source demo.mp4 --out outputs/demo.mp4      # 视频
 from facerec import FacePipeline
 
 pipe = FacePipeline(save_snapshots=True)
-result = pipe.process_image("data/sample/202210040130_20260523_085929.jpg", now=None)
+result = pipe.process_image("data/testset/P2_02.jpg", now=None)
 
 print(result["face_count"], result["latency_ms"])
 for event in result["events"]:
@@ -136,30 +137,32 @@ for event in result["events"]:
 | `DETECT_CONF` | `0.5` | 人脸检测置信度阈值 |
 | `DETECT_IMGSZ` | `640` | YOLO 推理输入边长，480/320 可提速 |
 | `MIN_FACE_SIZE` | `40` | 最小人脸边长（像素） |
-| `CROP_PADDING` | `0.15` | 人脸框外扩比例，实验证明对精度影响显著 |
-| `SIM_THRESHOLD` | `0.40` | 余弦相似度阈值，由 1:1 验证实验确定（FAR≈1%） |
+| `CROP_PADDING` | `0.15` | 人脸框外扩比例（近景数据上 0 与 0.15 差别不大，保留 0.15 兼顾小脸） |
+| `SIM_THRESHOLD` | `0.40` | 余弦相似度阈值，由 1:1 验证实验确定（落在“零误接受平台”中部） |
 | `COOLDOWN_SECONDS` | `1800` | 同一人重复签到冷却时间 |
 | `ATTENDANCE_PERIODS` | 见文件 | 签到时段与迟到阈值 |
 | `PROCESS_FPS` | `10` | 视频流最大处理帧率 |
 
 ## 实验与指标
 
-在 53 张自采集样本（7 个注册账号 / 5 位真实人物，跨 2 个月、不同光照）上的结果：
+测试集：**20 张手机自拍（3 位同学，1280×1706）**，每人 1 张注册照、其余 17 张作查询图，
+全部为纯 CPU 推理，结果来自配套课程报告 Notebook 的实际运行输出：
 
 | 指标 | 数值 |
 |------|------|
-| 检测召回率（单人人脸图像） | 53/53 = 100% |
-| 检测置信度（均值 / 最低） | 0.882 / 0.644 |
-| 1:1 验证 AUC | 0.992 |
-| TAR @ FAR=1% | 79.0%（阈值 0.41） |
-| TAR @ FAR=0.1% | 62.0%（阈值 0.46） |
-| 1:N rank-1（按真实人物） | 46/46 = 100% |
-| 1:N rank-1（按注册账号） | 34.8%（同一人被重复注册为 3 个账号） |
-| 检测耗时（1280×720, CPU, imgsz=640） | ≈30 ms/帧 |
-| 特征提取（112×112, CPU） | ≈25 ms/张 |
-| 端到端（单脸） | ≈70 ms → 12～15 FPS |
+| 检测召回率（单人图像） | 20/20 = 100% |
+| 检测置信度（均值 / 最低） | 0.891 / 0.770 |
+| 1:1 验证 AUC | 0.874（剔除 2 张“半张脸”样本后 1.000） |
+| TAR @ FAR=1% | 83.8%（负样本最高相似度 0.367） |
+| 1:N 闭集 rank-1 | 16/17 = 94.1% |
+| 1:N 开集准确率（阈值 0.40） | 15/17 = 88.2% |
+| 检测耗时（CPU, imgsz=640 / 320） | ≈38 / 18 ms 每帧 |
+| 特征提取（112×112, CPU） | ≈27 ms 每张 |
+| 端到端（单脸） | ≈84 ms → ≈12 FPS |
 
-> 完整实验（预处理消融、阈值曲线、失败案例）见配套课程报告 Notebook。
+> 这两张失败样本是“把脸怼到镜头上、只露出半张脸”的近景照。检测置信度依然有 0.86+，
+> 但特征已经失效（与同人只有 0.005～0.1 的相似度）。建议在识别前加一道质量门控
+> （例如人脸框宽高比 < 0.55 直接拒绝），详见报告 4.6 节。
 
 ## 设计说明
 
@@ -170,13 +173,16 @@ for event in result["events"]:
 - **为什么保留 FAISS**：注册规模上千后暴力检索仍是 O(N·d)，`IndexFlatIP` 提供统一接口，
   后续可平滑替换为 `IndexIVFFlat`；小规模下 NumPy 后端让环境零依赖。
 - **时间注入**：`now` 参数贯穿流线，使「迟到判定」「冷却去重」可在 Notebook 中离线回放与单元测试。
+- **中文路径安全**：`cv2.imread` 在 Windows 上对非 ASCII 路径会静默失败，因此图像读写统一走
+  `facerec/imageio.py`（`np.fromfile` + `cv2.imdecode`），否则项目放在含中文的目录下就跑不起来。
 
 ## 已知不足
 
 1. 未做人脸对齐（5 点关键点仿射），仅按检测框裁剪缩放，同人相似度分布偏低。
-2. 同一人被重复注册为多个学号时，1:N 会稳定匹配到其中一个，需要在注册环节做查重。
-3. 检测与识别逐帧全量执行，多人场景下延迟线性增长，可利用跟踪结果复用特征。
-4. 阈值固定，未按光照/清晰度自适应。
+2. 没有质量门控：半张脸、极近景、严重遮挡的输入仍会被送进识别，出错概率很高。
+3. 同一人被重复注册为多个学号时，1:N 会稳定匹配到其中一个，需要在注册环节做查重。
+4. 检测与识别逐帧全量执行，多人场景下延迟线性增长，可利用跟踪结果复用特征。
+5. 阈值固定，未按光照/清晰度自适应。
 
 ## 许可
 

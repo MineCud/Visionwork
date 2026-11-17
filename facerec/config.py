@@ -14,13 +14,14 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = Path(os.getenv("FACEREC_DATA_DIR", ROOT_DIR / "data"))
 GALLERY_DIR = DATA_DIR / "gallery"      # 人脸特征库（*.npy + index.csv）
 SAMPLE_DIR = DATA_DIR / "sample"        # 示例/评测图片
+TESTSET_DIR = DATA_DIR / "testset"      # 课程报告使用的测试集（20 张手机照片）
 SNAPSHOT_DIR = DATA_DIR / "snapshots"   # 考勤抓拍
 LOG_DIR = DATA_DIR / "logs"             # 考勤事件 CSV
 
 MODEL_DIR = Path(os.getenv("FACEREC_MODEL_DIR", ROOT_DIR / "models"))
 OUTPUT_DIR = Path(os.getenv("FACEREC_OUTPUT_DIR", ROOT_DIR / "outputs"))
 
-for _d in (GALLERY_DIR, SAMPLE_DIR, SNAPSHOT_DIR, LOG_DIR, MODEL_DIR, OUTPUT_DIR):
+for _d in (GALLERY_DIR, SAMPLE_DIR, TESTSET_DIR, SNAPSHOT_DIR, LOG_DIR, MODEL_DIR, OUTPUT_DIR):
     _d.mkdir(parents=True, exist_ok=True)
 
 DETECT_MODEL = MODEL_DIR / "yolov8n-face.pt"

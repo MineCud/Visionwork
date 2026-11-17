@@ -16,6 +16,7 @@ import numpy as np
 from . import config
 from .attendance import AttendanceEvent, AttendanceLogger, AttendanceTracker
 from .detector import Detection, FaceDetector
+from .imageio import imread, imwrite
 from .recognizer import FaceRecognizer
 
 
@@ -82,7 +83,7 @@ class FacePipeline:
     ) -> Dict:
         """处理单张图片（不做帧率节流，默认仍遵守签到冷却）。"""
         if isinstance(image, (str, Path)):
-            frame = cv2.imread(str(image))
+            frame = imread(image)
             if frame is None:
                 raise FileNotFoundError(f"无法读取图片: {image}")
         else:
@@ -177,7 +178,7 @@ class FacePipeline:
         try:
             self.snapshot_dir.mkdir(parents=True, exist_ok=True)
             path = self.snapshot_dir / f"{student_id}_{now.strftime('%Y%m%d_%H%M%S')}.jpg"
-            cv2.imwrite(str(path), frame)
+            imwrite(path, frame)
             return str(path)
         except Exception:
             return ""

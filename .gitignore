@@ -1,5 +1,6 @@
 # ---------------------------------------------------------------- 数据与模型（体积大 / 含人脸）
 data/sample/
+data/testset/
 data/snapshots/
 data/gallery/
 data/logs/

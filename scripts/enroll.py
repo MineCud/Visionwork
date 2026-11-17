@@ -23,6 +23,7 @@ import cv2  # noqa: E402
 
 from facerec import config  # noqa: E402
 from facerec.detector import FaceDetector  # noqa: E402
+from facerec.imageio import imread  # noqa: E402
 from facerec.gallery import FaceGallery  # noqa: E402
 from facerec.recognizer import FaceRecognizer  # noqa: E402
 
@@ -36,7 +37,7 @@ def collect_from_images(detector: FaceDetector, folder: Path, limit: int | None 
         files = files[:limit]
     crops = []
     for path in files:
-        frame = cv2.imread(str(path))
+        frame = imread(path)
         if frame is None:
             print(f"  [跳过] 无法读取 {path.name}")
             continue

@@ -14,6 +14,7 @@
 from .attendance import AttendanceEvent, AttendanceLogger, AttendanceTracker
 from .detector import Detection, FaceDetector
 from .gallery import FaceGallery
+from .imageio import imread, imread_rgb, imwrite
 from .pipeline import FacePipeline
 from .recognizer import FaceRecognizer
 
@@ -24,6 +25,9 @@ __all__ = [
     "FaceDetector",
     "FaceRecognizer",
     "FaceGallery",
+    "imread",
+    "imwrite",
+    "imread_rgb",
     "AttendanceTracker",
     "AttendanceLogger",
     "AttendanceEvent",

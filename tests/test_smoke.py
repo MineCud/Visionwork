@@ -68,26 +68,27 @@ def test_detector_and_pipeline() -> None:
     if not config.DETECT_MODEL.exists() or not config.ARCFACE_MODEL.exists():
         print("  [跳过] 模型缺失，先运行 python scripts/download_models.py")
         return
-    avatar = config.SAMPLE_DIR / "avatar_202210040130.jpg"
-    probe = config.SAMPLE_DIR / "202210040130_20260523_085929.jpg"
+    avatar = config.TESTSET_DIR / "P1_01.jpg"
+    probe = config.TESTSET_DIR / "P1_02.jpg"
     if not avatar.exists() or not probe.exists():
-        print("  [跳过] 示例图片缺失")
+        print("  [跳过] 测试集图片缺失")
         return
 
     import cv2
 
     from facerec.detector import FaceDetector
+    from facerec.imageio import imread
     from facerec.pipeline import FacePipeline
     from facerec.recognizer import FaceRecognizer
 
     detector = FaceDetector()
-    det, crop = detector.detect_largest(cv2.imread(str(avatar)))
+    det, crop = detector.detect_largest(imread(avatar))
     assert det is not None and crop is not None and crop.size > 0
 
     with tempfile.TemporaryDirectory() as tmp:
         gallery = FaceGallery(tmp)
         recognizer = FaceRecognizer(gallery=gallery, threshold=0.30)
-        ok, _ = recognizer.enroll("202210040130", [crop], name="Huang", class_name="CS2401")
+        ok, _ = recognizer.enroll("P1", [crop], name="Huang", class_name="CS2401")
         assert ok
 
         pipeline = FacePipeline(detector=detector, recognizer=recognizer)
@@ -95,7 +96,7 @@ def test_detector_and_pipeline() -> None:
         assert result["face_count"] >= 1
         assert len(result["events"]) == 1
         event = result["events"][0]
-        assert event.student_id == "202210040130"
+        assert event.student_id == "P1"
         assert event.status in {"Normal", "Late", "Off-hours"}
         assert event.similarity > 0.30
 
