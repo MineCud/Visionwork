@@ -1,6 +1,6 @@
 # face_mvp · 基于 YOLOv8-face + ArcFace 的课堂人脸识别考勤（核心 MVP）
 
-从课程项目「校园人脸识别考勤系统」中抽出的**核心识别链路**：不含 Web 前端、HTTP 接口和数据库，
+一个轻量的人脸识别考勤核心库：不含 Web 前端、HTTP 接口和数据库，
 只保留 *人脸检测 → 特征提取 → 1:N 检索 → 考勤判定* 这条主线，方便阅读、复现和二次开发。
 
 ![demo](docs/images/demo.jpg)
@@ -166,8 +166,8 @@ for event in result["events"]:
 
 ## 设计说明
 
-- **为什么去掉数据库**：考勤事件的本质是一条带时间戳的记录，CSV 已足够支撑离线分析；把存储换成 `AttendanceLogger`
-  即可无缝替换为 MySQL/Redis，核心识别逻辑不受影响。
+- **为什么用 CSV 而不是数据库**：考勤事件的本质是一条带时间戳的记录，CSV 已足够支撑离线分析；
+  存储被 `AttendanceLogger` 隔离，需要时替换为 MySQL/Redis 即可，核心识别逻辑不受影响。
 - **为什么去掉 Web**：`FacePipeline.process_frame` 输入一帧、输出带标注帧与事件，本身与传输层无关，
   需要时可套 FastAPI/MJPEG 而不改核心代码。
 - **为什么保留 FAISS**：注册规模上千后暴力检索仍是 O(N·d)，`IndexFlatIP` 提供统一接口，
